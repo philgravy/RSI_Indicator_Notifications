@@ -30,7 +30,7 @@ CANDLES_LIMIT = 200
 COOLDOWN_SECONDS = 300  # 5 minutes
 
 # This run’s overall time budget (GitHub step timeout safety)
-RUN_SECONDS = 6 * 60  # ~6 minutes per workflow run
+RUN_SECONDS = 4 * 60  # ~6 minutes per workflow run
 LOOP_SLEEP_SECONDS = 30  # sleep between TF sweeps
 
 def now_utc():
@@ -93,11 +93,15 @@ def classify_zone(rsi: float):
     if rsi > HIGH_THRESH: return "above"
     return "normal"
 
+STARTUP_DM = os.environ.get("STARTUP_DM", "true").lower() == "true"
+
 def main():
     start = time.time()
-    send_telegram("✅ BTC RSI watcher (GitHub Actions) starting… selecting exchange.")
+    if STARTUP_DM:
+        send_telegram("✅ BTC RSI watcher (GitHub Actions) starting… selecting exchange.")
     exchange, symbol = pick_working_market()
-    send_telegram(f"✅ Live on {exchange.id} • {symbol}\nTFs: {', '.join(TIMEFRAMES)}")
+    if STARTUP_DM:
+        send_telegram(f"✅ Live on {exchange.id} • {symbol}\nTFs: {', '.join(TIMEFRAMES)}")
 
     # Per-run state (resets each GA invocation)
     state = {
@@ -167,7 +171,7 @@ def main():
             time.sleep(20)
             try:
                 exchange, symbol = pick_working_market()
-                send_telegram(f"🔁 Switched to {exchange.id} / {symbol}")
+              #  send_telegram(f"🔁 Switched to {exchange.id} / {symbol}")
             except Exception as ee:
                 print(f"[{now_utc_str()}] Still no endpoint: {ee}. Waiting 30s…")
                 time.sleep(30)
